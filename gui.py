@@ -1,13 +1,28 @@
-from tkinter import *
+from PyQt6.QtWidgets import QMainWindow, QApplication
+import sys
 
-root = Tk()
-root.title("Tk Example")
-root.minsize(200, 200)  # width, height
-root.geometry("300x300+50+50")
 
-# Create Label in our window
-text = Label(root, text="Nothing will work unless you do.")
-text.pack()
-text2 = Label(root, text="- Maya Angelou")
-text2.pack()
-root.mainloop()
+class MainWidget(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Drag and Drop")
+        self.resize(720, 480)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        for f in files:
+            print(f)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ui = MainWidget()
+    ui.show()
+    sys.exit(app.exec())
