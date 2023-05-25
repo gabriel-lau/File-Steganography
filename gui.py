@@ -1,12 +1,11 @@
-from PyQt6.QtWidgets import QMainWindow, QApplication
+from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QPushButton
 import sys
 
 
-class MainWidget(QMainWindow):
+class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Drag and Drop")
-        self.resize(720, 480)
+        self.resize(720, 200)
         self.setAcceptDrops(True)
 
     def dragEnterEvent(self, event):
@@ -20,9 +19,30 @@ class MainWidget(QMainWindow):
         for f in files:
             print(f)
 
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("My App")
+        self.resize(720, 480)
+        mainWidget = QWidget()
+        
+        gridLayout = QGridLayout()
+        dndWidget = DNDWidget()
+        gridLayout.addWidget(dndWidget, 0, 0)
+        
+        verticalLayout = QVBoxLayout()
+        verticalLayout.addWidget(QPushButton("Button 1"))
+        verticalLayout.addWidget(QPushButton("Button 2"))
+        gridLayout.addLayout(verticalLayout, 1, 0)
+        
+        # Set the central widget of the Window.
+        mainWidget.setLayout(gridLayout)
+        self.setCentralWidget(mainWidget)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ui = MainWidget()
+    ui = MainWindow()
     ui.show()
     sys.exit(app.exec())
