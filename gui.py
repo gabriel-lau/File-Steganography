@@ -1,4 +1,4 @@
-import steganography
+import steganography as steg
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
@@ -202,13 +202,13 @@ class MainWindow(QMainWindow):
             print(bits)
             print(filePath)
             # SET DISPLAYED FILE
-            # encode(text, bits, filePath)
+            # steg.encode(text, bits, filePath)
             self.dndWidget.setFilePath(filePath)
 
     # DECODE BUTTON ACTION
     def decodeClicked(self):
-        filePath = self.dndWidget.getFilePath()
         bits = self.decodeWidget.getBits()
+        filePath = self.dndWidget.getFilePath()
         if bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
@@ -216,10 +216,10 @@ class MainWindow(QMainWindow):
             dlg.exec()
         else:
             # TODO: ENTRYPOINT TO DIFFERENT DECODE ALGO
-            print(filePath)
             print(bits)
+            print(filePath)
             # SET DECODE TEXT BOX
-            #self.decodeWidget.setText(decode(filePath, bits))
+            #self.decodeWidget.setText(steg.decode(filePath, bits))
             self.decodeWidget.setText(filePath)
             
     # SAVE BUTTON ACTION

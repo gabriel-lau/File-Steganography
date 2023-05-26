@@ -1,9 +1,12 @@
-import imgSteganography
-import docSteganography
-import avSteganography
+# INTERFACE BETWEEN GUI AND THE STEGANOGRAPHY MODULES
+import imgSteganography as img
+import docSteganography as doc
+import avSteganography as av
 
-def encode():
+def encode(): # encode(text, bits, file) -> file
+    
     return ""
 
-def decode():
+def decode(): # decode(bits, file) -> text
+    
     return ""
