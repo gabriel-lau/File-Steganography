@@ -133,7 +133,7 @@ def encode_mp3(audio_path, payload, num_lsb):
         raise ValueError(f"Insufficient samples to hide the message.\nAudio samples: {max_samples}\nRequired samples: {required_samples}")
 
     for i, b in enumerate(binary_payload):
-        data[i] = (data[i] & (0xFF << num_lsb)) | int(b)
+        data[i] = (data[i] & (0xFF << num_lsb)) | int(b, 2)
 
     file = open('encoded_audio.mp3', 'wb')
     file.write(data)
