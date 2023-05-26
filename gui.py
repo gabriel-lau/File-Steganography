@@ -1,4 +1,4 @@
-import typing
+import steganography
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
@@ -10,8 +10,8 @@ class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
-        self.filePath = "" # TODO: Bitstream needs to be used over filepath 
-        # self.fileBitStream = None
+        self.filePath = "" # TODO: fileByteArray or filepath?
+        # self.fileByteArray = None
         
         # LABEL AND FILE SELECT BUTTON WIDGET
         self.dndInfoWidget = QWidget()
@@ -59,11 +59,12 @@ class DNDWidget(QWidget):
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
-    # UPDATE DND FIELD WITH NEWLY SELECTED FILE
+    # UPDATE DND FIELD WITH FILE
     def setFilePath(self, filePath):
         print(filePath)
         if filePath.endswith(".png") or filePath.endswith(".jpg"):
             pixmap = QPixmap(filePath)
+            # pixmap.loadFromData(byteArray)
             self.imageWidget.setPixmap(pixmap.scaled(720, 480, Qt.AspectRatioMode.KeepAspectRatio))
             self.imageWidget.setHidden(False)
             self.dndInfoWidget.setHidden(True)
@@ -72,7 +73,7 @@ class DNDWidget(QWidget):
     # GET FILE PATH (Called from MainWindow.decodeClicked and MainWindow.encodeClicked)
     def getFilePath(self):
         return self.filePath
-
+    
 # ENCODE PARAMETERS WIDGET
 # Contains textfield to enter endcode text and bits selection
 class EncodeWidget(QWidget):
@@ -145,12 +146,14 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         # BASIC WINDOW SETTINGS
-        self.setWindowTitle("Steganography encoder/decoder")
+        self.setWindowTitle("Steganography Encoder/Decoder")
         self.resize(720, 720)
         self.setFixedWidth(720)
         
         #  LAYOUT
         gridLayout = QGridLayout()
+        
+        # DRAG AND DRIO WIDGET
         self.dndWidget = DNDWidget()
         gridLayout.addWidget(self.dndWidget, 0, 0, 1, 2)
         
@@ -173,7 +176,7 @@ class MainWindow(QMainWindow):
         decodePushButton.clicked.connect(self.decodeClicked)
         
         # SAVE BUTTON
-        savePushButton = QPushButton("Save file as...")
+        savePushButton = QPushButton("Save file as")
         gridLayout.addWidget(savePushButton, 3, 0, 1, 2)
         savePushButton.clicked.connect(self.saveClicked)
         
@@ -194,10 +197,13 @@ class MainWindow(QMainWindow):
             dlg.exec()
 
         else:
+            # TODO: ENTRYPOINT TO DIFFERENT ENCODE ALGO
             print(text)
             print(bits)
             print(filePath)
+            # SET DISPLAYED FILE
             # encode(text, bits, filePath)
+            self.dndWidget.setFilePath(filePath)
 
     # DECODE BUTTON ACTION
     def decodeClicked(self):
@@ -209,23 +215,26 @@ class MainWindow(QMainWindow):
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
         else:
+            # TODO: ENTRYPOINT TO DIFFERENT DECODE ALGO
             print(filePath)
             print(bits)
+            # SET DECODE TEXT BOX
             #self.decodeWidget.setText(decode(filePath, bits))
             self.decodeWidget.setText(filePath)
             
     # SAVE BUTTON ACTION
     def saveClicked(self):
-        fileBitcode = ""
-        if fileBitcode == "":
+        filePath = self.dndWidget.getFilePath() # TODO: Use fileByteArray or filePath?
+        if filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
-            dlg.setText("Please ensure that all fields are filled")
+            dlg.setText("Please ensure that a file is open")
             dlg.exec()
         else:
+            # TODO: Fix file saving
             dlg = QFileDialog()
             dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            dlg.saveFileContent(fileBitcode)
+            dlg.saveFileContent(filePath)
             if dlg.exec():
                 filenames = dlg.selectedFiles()
                 print(filenames)
