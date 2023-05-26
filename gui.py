@@ -4,53 +4,62 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 import sys
 
+# DRAG AND DROP MAIN WIDGET
 # Widget for image/document/audio drag and drop
 class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
-        self.filePath = ""
-        self.mainLayout = QHBoxLayout()
-        self.dndInfoWidget = QWidget()
-        self.imageWidget = QLabel()
+        self.filePath = "" # TODO: Bitstream needs to be used over filepath 
+        # self.fileBitStream = None
         
+        # LABEL AND FILE SELECT BUTTON WIDGET
+        self.dndInfoWidget = QWidget()
+        
+        # IMAGE WIDGET
+        self.imageWidget = QLabel()
         self.imageWidget.setHidden(True)
         
-        selectFilePushButton = QPushButton("Click here to select files")
-        selectFilePushButton.clicked.connect(self.return_clicked)
-        
+        # LABEL AND FILE SELECT BUTTON WIDGET CREATION
         dndInfoVerticalLayout = QVBoxLayout()
         dndInfoVerticalLayout.addStretch()
         dndInfoVerticalLayout.addWidget(QLabel("Drag and drop files here"), alignment=Qt.AlignmentFlag.AlignCenter)
         dndInfoVerticalLayout.addWidget(QLabel("or"), alignment=Qt.AlignmentFlag.AlignCenter)
+        selectFilePushButton = QPushButton("Click here to select files")
+        selectFilePushButton.clicked.connect(self.fileSelectClicked)
         dndInfoVerticalLayout.addWidget(selectFilePushButton)
         dndInfoVerticalLayout.addStretch()
         self.dndInfoWidget.setLayout(dndInfoVerticalLayout)
         
+        # MAIN LAYOUT SETUP
+        self.mainLayout = QHBoxLayout()
         self.mainLayout.addWidget(self.dndInfoWidget)
         self.mainLayout.addWidget(self.imageWidget)
-        
-        
         self.setLayout(self.mainLayout)
 
+    # DRAG AND DROP ENTRYPOINT
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
+    # DRAG AND DROP ACTION
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
             self.setFilePath(f)
     
-    def return_clicked(self):
+    # FILE SELECT BUTTON ACTION
+    def fileSelectClicked(self):
+        # DISPLAY FILE SELECT WINDOW
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.FileMode.ExistingFiles)
         dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio (*.mp3)")
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
+    # UPDATE DND FIELD WITH NEWLY SELECTED FILE
     def setFilePath(self, filePath):
         print(filePath)
         if filePath.endswith(".png") or filePath.endswith(".jpg"):
@@ -60,101 +69,123 @@ class DNDWidget(QWidget):
             self.dndInfoWidget.setHidden(True)
         self.filePath = filePath
     
+    # GET FILE PATH (Called from MainWindow.decodeClicked and MainWindow.encodeClicked)
     def getFilePath(self):
         return self.filePath
 
-# Widget for encrypting text
-class EncryptWidget(QWidget):
+# ENCODE PARAMETERS WIDGET
+# Contains textfield to enter endcode text and bits selection
+class EncodeWidget(QWidget):
     def __init__(self):
         super().__init__()
+        
+        # WIDGET LAYOUT
+        layout = QVBoxLayout()
+        
+        # ENCODE LABEL
+        layout.addWidget(QLabel("Encode"))
+        
+        # ENCODE TEXTFIELD
         self.plainTextEdit = QPlainTextEdit()
-
+        layout.addWidget(self.plainTextEdit)
+        
+        # ENCODE DROPDOWN BOX
         self.comboBox = QComboBox()
         self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits"])
-        
-        layout = QVBoxLayout()
-
-        layout.addWidget(QLabel("Encrypt"))
-        layout.addWidget(self.plainTextEdit)
         layout.addWidget(self.comboBox)
+        
+        # ASSIGNING LAYOUT TO  WIDGET
         self.setLayout(layout)
         
+    # GET TEXT TO ENCODE (Called from MainWindow.encodeClicked)
     def getText(self):
         return self.plainTextEdit.toPlainText()
     
+    # GET BIT SELECTION (Called from MainWindow.encodeClicked)
     def getBits(self):
         return self.comboBox.currentIndex()
 
-# Widget for decrypting text
-class DecryptWidget(QWidget):
+# DECODE PARAMETERS WIDGET
+# Contains textfield to show decode text and bits selection
+class DecodeWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.plainTextEdit = QPlainTextEdit()
-        self.plainTextEdit.setEnabled(False)
         
-        self.comboBox = QComboBox()
-        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits"])
-        
+        # WIDGET LAYOUT
         layout = QVBoxLayout()
         
-        layout.addWidget(QLabel("Decrypt"))
-        layout.addWidget(self.plainTextEdit)
-        layout.addWidget(self.comboBox)
-        self.setLayout(layout)
+        # ADD DECODE LABEL TO LAYOUT
+        layout.addWidget(QLabel("Decode"))
         
+        # ADD DECODE TEXTFIELD TO LAYOUT
+        self.plainTextEdit = QPlainTextEdit()
+        self.plainTextEdit.setEnabled(False)
+        layout.addWidget(self.plainTextEdit)
+        
+        # ADD DECODE DROPDOWN BOX TO LAYOUT
+        self.comboBox = QComboBox()
+        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits"])
+        layout.addWidget(self.comboBox)
+        
+        # ASSIGNING LAYOUT TO  WIDGET
+        self.setLayout(layout)
+    
+    # SET DECODED TEXT (Called from MainWindow.decodeClicked)
     def setText(self, text):
         self.plainTextEdit.setPlainText(text)
     
+    # GET BIT SELECTION (Called from MainWindow.decodeClicked)
     def getBits(self):
         return self.comboBox.currentIndex()
 
 # Main window
-# Contains all widgets above, buttons to encrypt/decrypt and save
+# Contains all widgets above, buttons to encode/decode and save
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
         # BASIC WINDOW SETTINGS
-        self.setWindowTitle("My App")
+        self.setWindowTitle("Steganography encoder/decoder")
         self.resize(720, 720)
         self.setFixedWidth(720)
-        mainWidget = QWidget()
         
-        # LAYOUT
+        #  LAYOUT
         gridLayout = QGridLayout()
         self.dndWidget = DNDWidget()
         gridLayout.addWidget(self.dndWidget, 0, 0, 1, 2)
         
-        # ENCRYPT WIDGET
-        self.encryptWidget = EncryptWidget()
-        gridLayout.addWidget(self.encryptWidget, 1, 0)
+        # ENCODE WIDGET
+        self.encodeWidget = EncodeWidget()
+        gridLayout.addWidget(self.encodeWidget, 1, 0)
         
-        # ENCRYPT BUTTON
-        encryptPushButton = QPushButton("Encrypt")
-        gridLayout.addWidget(encryptPushButton, 2, 0)
-        encryptPushButton.clicked.connect(self.encyptClicked)
+        # ENCODE BUTTON
+        encodePushButton = QPushButton("Encode")
+        gridLayout.addWidget(encodePushButton, 2, 0)
+        encodePushButton.clicked.connect(self.encodeClicked)
         
-        # DECRYPT WIDGET
-        self.decryptWidget = DecryptWidget()
-        gridLayout.addWidget(self.decryptWidget, 1, 1)
+        # DECODE WIDGET
+        self.decodeWidget = DecodeWidget()
+        gridLayout.addWidget(self.decodeWidget, 1, 1)
         
-        # DECRYPT BUTTONS
-        decryptPushButton = QPushButton("Decrypt")
-        gridLayout.addWidget(decryptPushButton, 2, 1)
-        decryptPushButton.clicked.connect(self.decrypt_clicked)
+        # DECODE BUTTONS
+        decodePushButton = QPushButton("Decode")
+        gridLayout.addWidget(decodePushButton, 2, 1)
+        decodePushButton.clicked.connect(self.decodeClicked)
         
         # SAVE BUTTON
-        savePushButton = QPushButton("Save")
+        savePushButton = QPushButton("Save file as...")
         gridLayout.addWidget(savePushButton, 3, 0, 1, 2)
-        savePushButton.clicked.connect(self.save_clicked)
+        savePushButton.clicked.connect(self.saveClicked)
         
         # FINAL WINDOW SETTINGS
+        mainWidget = QWidget()
         mainWidget.setLayout(gridLayout)
         self.setCentralWidget(mainWidget)
         
-    def encyptClicked(self):
-        text = self.encryptWidget.getText()
-        bits = self.encryptWidget.getBits()
+    # ENCODE BUTTON ACTION
+    def encodeClicked(self):
+        text = self.encodeWidget.getText()
+        bits = self.encodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
         if text == "" or bits == 0 or filePath == "":
             dlg = QMessageBox(self)
@@ -166,11 +197,12 @@ class MainWindow(QMainWindow):
             print(text)
             print(bits)
             print(filePath)
-            # encrypt(text, bits, filePath)
+            # encode(text, bits, filePath)
 
-    def decrypt_clicked(self):
+    # DECODE BUTTON ACTION
+    def decodeClicked(self):
         filePath = self.dndWidget.getFilePath()
-        bits = self.decryptWidget.getBits()
+        bits = self.decodeWidget.getBits()
         if bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
@@ -179,12 +211,13 @@ class MainWindow(QMainWindow):
         else:
             print(filePath)
             print(bits)
-            #self.decryptWidget.setText(decrypt(filePath, bits))
-            self.decryptWidget.setText(filePath)
+            #self.decodeWidget.setText(decode(filePath, bits))
+            self.decodeWidget.setText(filePath)
             
-    def save_clicked(self):
-        filePath = self.dndWidget.getFilePath()
-        if filePath == "":
+    # SAVE BUTTON ACTION
+    def saveClicked(self):
+        fileBitcode = ""
+        if fileBitcode == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
@@ -192,7 +225,7 @@ class MainWindow(QMainWindow):
         else:
             dlg = QFileDialog()
             dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            dlg.saveFileContent(filePath)
+            dlg.saveFileContent(fileBitcode)
             if dlg.exec():
                 filenames = dlg.selectedFiles()
                 print(filenames)
