@@ -1,8 +1,11 @@
 import steganography as steg
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog
+from PyQt6.QtMultimedia import QMediaPlayer
+from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QUrl
 import sys
+import signal
 
 # DRAG AND DROP MAIN WIDGET
 # Widget for image/document/audio drag and drop
@@ -11,6 +14,7 @@ class DNDWidget(QWidget):
         super().__init__()
         self.setAcceptDrops(True)
         self.filePath = "" # TODO: fileByteArray or filepath?
+        self.setFixedSize(700, 480)
         # self.fileByteArray = None
         
         # LABEL AND FILE SELECT BUTTON WIDGET
@@ -19,6 +23,18 @@ class DNDWidget(QWidget):
         # IMAGE WIDGET
         self.imageWidget = QLabel()
         self.imageWidget.setHidden(True)
+        
+        # VIDEO WIDGET
+        self.mediaPlayer = QMediaPlayer()
+        self.videoWidget = QVideoWidget()
+        self.videoWidget.setHidden(True)
+        self.mediaPlayer.setVideoOutput(self.videoWidget)
+        
+        # AUDIO WIDGET
+        
+        
+        # DOCUMENT WIDGET
+        self.documentWidget = QPlainTextEdit()
         
         # LABEL AND FILE SELECT BUTTON WIDGET CREATION
         dndInfoVerticalLayout = QVBoxLayout()
@@ -35,6 +51,7 @@ class DNDWidget(QWidget):
         self.mainLayout = QHBoxLayout()
         self.mainLayout.addWidget(self.dndInfoWidget)
         self.mainLayout.addWidget(self.imageWidget)
+        self.mainLayout.addWidget(self.videoWidget)
         self.setLayout(self.mainLayout)
 
     # DRAG AND DROP ENTRYPOINT
@@ -48,14 +65,15 @@ class DNDWidget(QWidget):
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
-            self.setFilePath(f)
+            if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4"):
+                self.setFilePath(f)
     
     # FILE SELECT BUTTON ACTION
     def fileSelectClicked(self):
         # DISPLAY FILE SELECT WINDOW
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.FileMode.ExistingFiles)
-        dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio (*.mp3)")
+        dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio/Video (*.mp3 *.mp4 *.wav)")
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
@@ -65,9 +83,27 @@ class DNDWidget(QWidget):
         if filePath.endswith(".png") or filePath.endswith(".jpg"):
             pixmap = QPixmap(filePath)
             # pixmap.loadFromData(byteArray)
-            self.imageWidget.setPixmap(pixmap.scaled(720, 480, Qt.AspectRatioMode.KeepAspectRatio))
-            self.imageWidget.setHidden(False)
+            self.imageWidget.setPixmap(pixmap.scaled(700, 480, Qt.AspectRatioMode.KeepAspectRatio))
             self.dndInfoWidget.setHidden(True)
+            self.imageWidget.setHidden(False)
+            self.videoWidget.setHidden(True)
+        elif filePath.endswith(".txt"):
+            #TODO: display text
+            self.dndInfoWidget.setHidden(True)
+            self.imageWidget.setHidden(True)
+            self.videoWidget.setHidden(True)
+            
+        elif filePath.endswith(".mp3"):
+            # TODO: play audio
+            print()
+            
+        elif filePath.endswith(".mp4"):
+            self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
+            self.mediaPlayer.play()
+            self.dndInfoWidget.setHidden(True)
+            self.imageWidget.setHidden(True)
+            self.videoWidget.setHidden(False)
+            
         self.filePath = filePath
     
     # GET FILE PATH (Called from MainWindow.decodeClicked and MainWindow.encodeClicked)
@@ -88,6 +124,7 @@ class EncodeWidget(QWidget):
         
         # ENCODE TEXTFIELD
         self.plainTextEdit = QPlainTextEdit()
+        self.plainTextEdit.setFixedHeight(60)
         layout.addWidget(self.plainTextEdit)
         
         # ENCODE DROPDOWN BOX
@@ -121,6 +158,7 @@ class DecodeWidget(QWidget):
         # ADD DECODE TEXTFIELD TO LAYOUT
         self.plainTextEdit = QPlainTextEdit()
         self.plainTextEdit.setEnabled(False)
+        self.plainTextEdit.setFixedHeight(60)
         layout.addWidget(self.plainTextEdit)
         
         # ADD DECODE DROPDOWN BOX TO LAYOUT
@@ -147,7 +185,6 @@ class MainWindow(QMainWindow):
         
         # BASIC WINDOW SETTINGS
         self.setWindowTitle("Steganography Encoder/Decoder")
-        self.resize(720, 720)
         self.setFixedWidth(720)
         
         #  LAYOUT
@@ -232,9 +269,13 @@ class MainWindow(QMainWindow):
             dlg.exec()
         else:
             # TODO: Fix file saving
+            file = open(filePath, 'rb')
+            data = bytearray(file.read())
+            file.close()
+    
             dlg = QFileDialog()
             dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            dlg.saveFileContent(filePath)
+            dlg.saveFileContent(data)
             if dlg.exec():
                 filenames = dlg.selectedFiles()
                 print(filenames)
@@ -243,4 +284,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ui = MainWindow()
     ui.show()
+    signal.signal(signal.SIGINT, signal.SIG_DFL) # ctl + c to quit
     sys.exit(app.exec())
