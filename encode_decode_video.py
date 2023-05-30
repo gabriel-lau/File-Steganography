@@ -53,6 +53,7 @@ def encode_mp4(mp4_path, payload, num_lsb):
         raise ValueError(f"Insufficient samples to hide the message.\nAudio samples: {mdat_size}\nRequired samples: {required_samples}")
     
     for i in range(mdat_position, mdat_position + required_samples):
+        # replace the last num_lsb bits of the byte with the payload
         data[i] = (data[i] & (0xFF << num_lsb)) | int(binary_payload[i - mdat_position], 2)
 
     file = open('encoded_video.mp4', 'wb')
@@ -71,8 +72,10 @@ def decode_mp4(mp4_path, num_lsb):
     chr_bin = ''
 
     for i in range(mdat_position, len(data)):
+        # get the last num_lsb bits of the byte
         chr_bin += int_to_bin(data[i])[-num_lsb:]
 
+        # convert the binary string to a character when there are at least 8 bits
         if len(chr_bin) >= 8:
             payload += chr(int(chr_bin[:8], 2))
             chr_bin = chr_bin[8:]
