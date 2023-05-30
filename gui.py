@@ -1,6 +1,7 @@
 import steganography as steg
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog
-from PyQt6.QtMultimedia import QMediaPlayer
+from PyQt6.QtWidgets import (QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, 
+                             QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog, QStackedLayout, QSlider, QStyle)
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QUrl
@@ -13,9 +14,9 @@ class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
-        self.filePath = "" # TODO: fileByteArray or filepath?
+        self.filePath = ""
         self.setFixedSize(700, 480)
-        # self.fileByteArray = None
+        self.setObjectName("dndWidget")
         
         # LABEL AND FILE SELECT BUTTON WIDGET
         self.dndInfoWidget = QWidget()
@@ -25,13 +26,12 @@ class DNDWidget(QWidget):
         self.imageWidget.setHidden(True)
         
         # VIDEO WIDGET
-        self.mediaPlayer = QMediaPlayer()
-        self.videoWidget = QVideoWidget()
+        self.videoWidget = VideoWidget()
         self.videoWidget.setHidden(True)
-        self.mediaPlayer.setVideoOutput(self.videoWidget)
         
         # AUDIO WIDGET
-        
+        self.audioWidget = AudioWidget()
+        self.audioWidget.setHidden(True)
         
         # DOCUMENT WIDGET
         self.documentWidget = QPlainTextEdit()
@@ -52,6 +52,7 @@ class DNDWidget(QWidget):
         self.mainLayout.addWidget(self.dndInfoWidget)
         self.mainLayout.addWidget(self.imageWidget)
         self.mainLayout.addWidget(self.videoWidget)
+        self.mainLayout.addWidget(self.audioWidget)
         self.setLayout(self.mainLayout)
 
     # DRAG AND DROP ENTRYPOINT
@@ -67,7 +68,7 @@ class DNDWidget(QWidget):
         for f in files:
             if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4"):
                 self.setFilePath(f)
-    
+        
     # FILE SELECT BUTTON ACTION
     def fileSelectClicked(self):
         # DISPLAY FILE SELECT WINDOW
@@ -82,27 +83,33 @@ class DNDWidget(QWidget):
         print(filePath)
         if filePath.endswith(".png") or filePath.endswith(".jpg"):
             pixmap = QPixmap(filePath)
-            # pixmap.loadFromData(byteArray)
             self.imageWidget.setPixmap(pixmap.scaled(700, 480, Qt.AspectRatioMode.KeepAspectRatio))
             self.dndInfoWidget.setHidden(True)
             self.imageWidget.setHidden(False)
             self.videoWidget.setHidden(True)
+            self.audioWidget.setHidden(True)
+    
         elif filePath.endswith(".txt"):
             #TODO: display text
             self.dndInfoWidget.setHidden(True)
             self.imageWidget.setHidden(True)
             self.videoWidget.setHidden(True)
+            self.audioWidget.setHidden(True)
             
         elif filePath.endswith(".mp3"):
-            # TODO: play audio
-            print()
+            self.audioWidget.setAudioPath(filePath)
+            self.dndInfoWidget.setHidden(True)
+            self.imageWidget.setHidden(True)
+            self.videoWidget.setHidden(True)
+            self.audioWidget.setHidden(False)
+
             
         elif filePath.endswith(".mp4"):
-            self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
-            self.mediaPlayer.play()
+            self.videoWidget.setVideoPath(filePath)
             self.dndInfoWidget.setHidden(True)
             self.imageWidget.setHidden(True)
             self.videoWidget.setHidden(False)
+            self.audioWidget.setHidden(True)
             
         self.filePath = filePath
     
@@ -110,6 +117,106 @@ class DNDWidget(QWidget):
     def getFilePath(self):
         return self.filePath
     
+# VIDEO PLAYER WIDGET FOR DRAG AND DROP
+class VideoWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        # VIDEO PLAYER WIDGET
+        self.videoWidget = QVideoWidget()
+        
+        # AUDIO OUTPUT
+        self.audioOutput = QAudioOutput()
+        
+        # MEDIA PLAYER
+        self.mediaPlayer = QMediaPlayer()
+        self.mediaPlayer.setVideoOutput(self.videoWidget)
+        self.mediaPlayer.setAudioOutput(self.audioOutput)
+        self.mediaPlayer.setLoops(-1)
+        
+        # TRANSPARENT WIDGET (To enable drag and drop on video widget as video widget got problem)
+        transprentWidget = QWidget()
+        transprentWidget.setStyleSheet('background-color: transparent;')
+        transprentWidget.setAutoFillBackground(True)
+        
+        # LAYOUT SETUP
+        layout = QStackedLayout()
+        layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
+        layout.addWidget(self.videoWidget)
+        layout.addWidget(transprentWidget)
+
+        self.setLayout(layout)
+        
+    def setVideoPath(self, filePath):
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
+        self.mediaPlayer.play()
+    
+    def setHidden(self, hide):
+        if hide:
+            self.mediaPlayer.stop()
+            super().setHidden(True)
+        else:
+            super().setHidden(False)
+    
+class AudioWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        # AUDIO OUTPUT
+        self.audioOutput = QAudioOutput()
+        
+        # MEDIA PLAYER
+        self.mediaPlayer = QMediaPlayer()
+        self.mediaPlayer.setAudioOutput(self.audioOutput)
+        self.mediaPlayer.setLoops(-1)
+        self.mediaPlayer.positionChanged.connect(self.positionChanged)
+        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+        
+        # PLAY/PAUSE BUTTON
+        self.playPauseButton = QPushButton()
+        self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+        self.playPauseButton.clicked.connect(self.playPauseClicked)
+        
+        # PROGRESS SLIDER
+        self.progressSlider = QSlider(Qt.Orientation.Horizontal)
+        self.progressSlider.setRange(0, 100)
+        self.progressSlider.sliderMoved.connect(self.progressSliderMoved)
+        
+        # LAYOUT SETUP
+        layout = QHBoxLayout()
+        layout.addWidget(self.playPauseButton)
+        layout.addWidget(self.progressSlider)
+        self.setLayout(layout)
+        
+    
+    def setAudioPath(self, filePath):
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
+        self.mediaPlayer.play()
+    
+    def setHidden(self, hide):
+        if hide:
+            self.mediaPlayer.stop()
+            super().setHidden(True)
+        else:
+            super().setHidden(False)
+            
+    def playPauseClicked(self):
+        if self.mediaPlayer.isPlaying() == True:
+            self.mediaPlayer.pause()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        else:
+            self.mediaPlayer.play()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+    
+    def positionChanged(self, position):
+        self.progressSlider.setValue(position)
+
+    def durationChanged(self, duration):
+        self.progressSlider.setRange(0, duration)
+    
+    def progressSliderMoved(self, position):
+        self.mediaPlayer.setPosition(position)
+        
 # ENCODE PARAMETERS WIDGET
 # Contains textfield to enter endcode text and bits selection
 class EncodeWidget(QWidget):
@@ -182,6 +289,7 @@ class DecodeWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setStyleSheet("QWidget#dndWidget { border: 1px solid black } ")
         
         # BASIC WINDOW SETTINGS
         self.setWindowTitle("Steganography Encoder/Decoder")
@@ -227,41 +335,39 @@ class MainWindow(QMainWindow):
         text = self.encodeWidget.getText()
         bits = self.encodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if text == "" or bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
-
+            
+        # Encode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT ENCODE ALGO
-            print(text)
-            print(bits)
-            print(filePath)
             # SET DISPLAYED FILE
-            # steg.encode(text, bits, filePath)
-            self.dndWidget.setFilePath(filePath)
+            self.dndWidget.setFilePath(steg.encode(text, bits, filePath))
 
     # DECODE BUTTON ACTION
     def decodeClicked(self):
         bits = self.decodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
+        
+        # Decode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT DECODE ALGO
-            print(bits)
-            print(filePath)
             # SET DECODE TEXT BOX
-            #self.decodeWidget.setText(steg.decode(filePath, bits))
-            self.decodeWidget.setText(filePath)
+            self.decodeWidget.setText(steg.decode(bits, filePath))
             
     # SAVE BUTTON ACTION
     def saveClicked(self):
-        filePath = self.dndWidget.getFilePath() # TODO: Use fileByteArray or filePath?
+        filePath = self.dndWidget.getFilePath()
         if filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
