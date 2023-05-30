@@ -29,6 +29,13 @@ def find_mdat_box(file_path):
             
             if box_type == 'mdat':
                 # Found 'mdat' box, return its position and size
+                mdat_position = mp4_file.tell()
+
+                # If mdat position is greater than box size, then the metadata might be corrupted
+                # Another method of calculating mdat size will be used instead
+                if mdat_position > box_size:
+                    mp4_file.read()
+                    box_size = mp4_file.tell() - mdat_position
                 return mp4_file.tell(), box_size
             else:
                 # Skip to the next box
