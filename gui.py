@@ -1,6 +1,7 @@
 import steganography as steg
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog, QStackedLayout
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QAudioDevice
+from PyQt6.QtWidgets import (QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, 
+                             QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog, QStackedLayout, QSlider, QStyle)
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QUrl
@@ -13,9 +14,9 @@ class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
-        self.filePath = "" # TODO: fileByteArray or filepath?
+        self.filePath = ""
         self.setFixedSize(700, 480)
-        # self.fileByteArray = None
+        self.setObjectName("dndWidget")
         
         # LABEL AND FILE SELECT BUTTON WIDGET
         self.dndInfoWidget = QWidget()
@@ -168,6 +169,25 @@ class AudioWidget(QWidget):
         self.mediaPlayer = QMediaPlayer()
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setLoops(-1)
+        self.mediaPlayer.positionChanged.connect(self.positionChanged)
+        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+        
+        # PLAY/PAUSE BUTTON
+        self.playPauseButton = QPushButton()
+        self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+        self.playPauseButton.clicked.connect(self.playPauseClicked)
+        
+        # PROGRESS SLIDER
+        self.progressSlider = QSlider(Qt.Orientation.Horizontal)
+        self.progressSlider.setRange(0, 100)
+        self.progressSlider.sliderMoved.connect(self.progressSliderMoved)
+        
+        # LAYOUT SETUP
+        layout = QHBoxLayout()
+        layout.addWidget(self.playPauseButton)
+        layout.addWidget(self.progressSlider)
+        self.setLayout(layout)
+        
     
     def setAudioPath(self, filePath):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
@@ -179,6 +199,23 @@ class AudioWidget(QWidget):
             super().setHidden(True)
         else:
             super().setHidden(False)
+            
+    def playPauseClicked(self):
+        if self.mediaPlayer.isPlaying() == True:
+            self.mediaPlayer.pause()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        else:
+            self.mediaPlayer.play()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+    
+    def positionChanged(self, position):
+        self.progressSlider.setValue(position)
+
+    def durationChanged(self, duration):
+        self.progressSlider.setRange(0, duration)
+    
+    def progressSliderMoved(self, position):
+        self.mediaPlayer.setPosition(position)
         
 # ENCODE PARAMETERS WIDGET
 # Contains textfield to enter endcode text and bits selection
@@ -252,6 +289,7 @@ class DecodeWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setStyleSheet("QWidget#dndWidget { border: 1px solid black } ")
         
         # BASIC WINDOW SETTINGS
         self.setWindowTitle("Steganography Encoder/Decoder")
@@ -297,17 +335,16 @@ class MainWindow(QMainWindow):
         text = self.encodeWidget.getText()
         bits = self.encodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if text == "" or bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
-
+            
+        # Encode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT ENCODE ALGO
-            print(text)
-            print(bits)
-            print(filePath)
             # SET DISPLAYED FILE
             self.dndWidget.setFilePath(steg.encode(text, bits, filePath))
 
@@ -315,21 +352,22 @@ class MainWindow(QMainWindow):
     def decodeClicked(self):
         bits = self.decodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
+        
+        # Decode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT DECODE ALGO
-            print(bits)
-            print(filePath)
             # SET DECODE TEXT BOX
             self.decodeWidget.setText(steg.decode(bits, filePath))
             
     # SAVE BUTTON ACTION
     def saveClicked(self):
-        filePath = self.dndWidget.getFilePath() # TODO: Use fileByteArray or filePath?
+        filePath = self.dndWidget.getFilePath()
         if filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
