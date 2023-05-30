@@ -3,10 +3,10 @@ import imgSteganography as img
 import docSteganography as doc
 import avSteganography as av
 
-def encode(): # encode(text, bits, file) -> file
+def encode(text, bits, fileName): # encode(text, bit, fileName) -> fileName
     
-    return ""
+    return fileName
 
-def decode(): # decode(bits, file) -> text
+def decode(bits, fileName): # decode(bit, fileName) -> text
     
-    return ""
+    return fileName
