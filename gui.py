@@ -147,10 +147,12 @@ class VideoWidget(QWidget):
 
         self.setLayout(layout)
         
+    # SET VIDEO PATH TO PLAY (Called friom DnDWidget.setFilePath)
     def setVideoPath(self, filePath):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
         self.mediaPlayer.play()
     
+    # HIDE AND STOP VIDEO
     def setHidden(self, hide):
         if hide:
             self.mediaPlayer.stop()
@@ -158,6 +160,7 @@ class VideoWidget(QWidget):
         else:
             super().setHidden(False)
     
+# AUDIO PLAYER WIDGET FOR DRAG AND DROP
 class AudioWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -188,11 +191,12 @@ class AudioWidget(QWidget):
         layout.addWidget(self.progressSlider)
         self.setLayout(layout)
         
-    
+    # SET AUDIO PATH TO PLAY (Called friom DnDWidget.setFilePath)
     def setAudioPath(self, filePath):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
         self.mediaPlayer.play()
     
+    # HIDE AND STOP AUDIO
     def setHidden(self, hide):
         if hide:
             self.mediaPlayer.stop()
@@ -200,6 +204,7 @@ class AudioWidget(QWidget):
         else:
             super().setHidden(False)
             
+    # PLAY/PAUSE BUTTON ACTION
     def playPauseClicked(self):
         if self.mediaPlayer.isPlaying() == True:
             self.mediaPlayer.pause()
@@ -208,12 +213,15 @@ class AudioWidget(QWidget):
             self.mediaPlayer.play()
             self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
     
+    # PROGRESS SLIDER MOVEMENT ACTION
     def positionChanged(self, position):
         self.progressSlider.setValue(position)
 
+    # PROGRESS SLIDER MOVEMENT ACTION
     def durationChanged(self, duration):
         self.progressSlider.setRange(0, duration)
     
+    # PROGRESS SLIDER MOVEMENT ACTION
     def progressSliderMoved(self, position):
         self.mediaPlayer.setPosition(position)
         
