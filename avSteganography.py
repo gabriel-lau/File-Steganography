@@ -13,9 +13,9 @@ def encode_av(file_path, payload, num_lsb):
         ValueError: if file format is not supported
     """
     if file_path.endswith(('.mp3', '.wav')):
-        encode_audio(file_path, payload, num_lsb)
+        return encode_audio(file_path, payload, num_lsb)
     elif file_path.endswith('.mp4'):
-        encode_video(file_path, payload, num_lsb)
+        return encode_video(file_path, payload, num_lsb)
     else:
         raise ValueError('File format not supported.')
     

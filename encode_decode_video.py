@@ -12,7 +12,7 @@ def encode_video(video_path, payload, num_lsb):
         ValueError: if file format is not supported
     """
     if video_path.endswith('.mp4'):
-        encode_mp4(video_path, payload, num_lsb)
+        return encode_mp4(video_path, payload, num_lsb)
     else:
         raise ValueError('File format not supported.')
     
@@ -59,6 +59,8 @@ def encode_mp4(mp4_path, payload, num_lsb):
     file = open('encoded_video.mp4', 'wb')
     file.write(data)
     file.close()
+    
+    return 'encoded_video.mp4'
 
 def decode_mp4(mp4_path, num_lsb):
     mdat_position = find_mdat_box(mp4_path)[0]

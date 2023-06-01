@@ -13,9 +13,9 @@ def encode_audio(audio_path, payload, num_lsb):
         ValueError: if file format is not supported
     """
     if audio_path.endswith('.mp3'):
-        encode_mp3(audio_path, payload, num_lsb)
+        return encode_mp3(audio_path, payload, num_lsb)
     elif audio_path.endswith('.wav'):
-        encode_wav(audio_path, payload, num_lsb)
+        return encode_wav(audio_path, payload, num_lsb)
     else:
         raise ValueError("Unsupported audio file format.")
     
@@ -79,7 +79,7 @@ def encode_wav(audio_path, payload, num_lsb):
     modified_audio.close()
     audio.close()
 
-    return required_samples
+    return "encoded_audio.wav" # required_samples
 
 def decode_wav(audio_path, num_lsb):
     # Open the audio file
@@ -134,6 +134,8 @@ def encode_mp3(audio_path, payload, num_lsb):
     file = open('encoded_audio.mp3', 'wb')
     file.write(data)
     file.close()
+    
+    return 'encoded_audio.mp3'
 
 # Function to extract the secret message from the audio file
 def decode_mp3(audio_path, num_lsb):

@@ -66,7 +66,7 @@ class DNDWidget(QWidget):
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
-            if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4"):
+            if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
                 self.setFilePath(f)
         
     # FILE SELECT BUTTON ACTION
@@ -96,7 +96,7 @@ class DNDWidget(QWidget):
             self.videoWidget.setHidden(True)
             self.audioWidget.setHidden(True)
             
-        elif filePath.endswith(".mp3"):
+        elif filePath.endswith(".mp3") or filePath.endswith(".wav"):
             self.audioWidget.setAudioPath(filePath)
             self.dndInfoWidget.setHidden(True)
             self.imageWidget.setHidden(True)
@@ -194,6 +194,7 @@ class AudioWidget(QWidget):
     # SET AUDIO PATH TO PLAY (Called friom DnDWidget.setFilePath)
     def setAudioPath(self, filePath):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
+        self.playPauseClicked()
         self.mediaPlayer.play()
     
     # HIDE AND STOP AUDIO
