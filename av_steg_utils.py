@@ -36,7 +36,8 @@ def find_mdat_box(file_path):
                 if mdat_position > box_size:
                     mp4_file.read()
                     box_size = mp4_file.tell() - mdat_position
-                return mp4_file.tell(), box_size
+                    return mdat_position, box_size
+                return mdat_position, box_size
             else:
                 # Skip to the next box
                 mp4_file.seek(box_size - 8, 1)
