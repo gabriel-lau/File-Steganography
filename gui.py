@@ -1,8 +1,12 @@
 import steganography as steg
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog
+from PyQt6.QtWidgets import (QMainWindow, QApplication, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, 
+                             QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog, QStackedLayout, QSlider, QStyle)
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt
-import sys
+from PyQt6.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QObject
+import sys, traceback
+import signal
 
 # DRAG AND DROP MAIN WIDGET
 # Widget for image/document/audio drag and drop
@@ -10,15 +14,24 @@ class DNDWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
-        self.filePath = "" # TODO: fileByteArray or filepath?
-        # self.fileByteArray = None
+        self.filePath = ""
+        self.setFixedSize(700, 480)
+        self.setObjectName("dndWidget")
         
         # LABEL AND FILE SELECT BUTTON WIDGET
         self.dndInfoWidget = QWidget()
         
         # IMAGE WIDGET
-        self.imageWidget = QLabel()
-        self.imageWidget.setHidden(True)
+        self.imageWidget = None
+        
+        # TEXT WIDGET
+        self.textWidget = None
+        
+        # VIDEO WIDGET
+        self.videoWidget = None
+        
+        # AUDIO WIDGET
+        self.audioWidget = None
         
         # LABEL AND FILE SELECT BUTTON WIDGET CREATION
         dndInfoVerticalLayout = QVBoxLayout()
@@ -34,7 +47,6 @@ class DNDWidget(QWidget):
         # MAIN LAYOUT SETUP
         self.mainLayout = QHBoxLayout()
         self.mainLayout.addWidget(self.dndInfoWidget)
-        self.mainLayout.addWidget(self.imageWidget)
         self.setLayout(self.mainLayout)
 
     # DRAG AND DROP ENTRYPOINT
@@ -48,14 +60,15 @@ class DNDWidget(QWidget):
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
-            self.setFilePath(f)
-    
+            if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
+                self.setFilePath(f)
+        
     # FILE SELECT BUTTON ACTION
     def fileSelectClicked(self):
         # DISPLAY FILE SELECT WINDOW
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.FileMode.ExistingFiles)
-        dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio (*.mp3)")
+        dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio/Video (*.mp3 *.mp4 *.wav)")
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
@@ -63,17 +76,147 @@ class DNDWidget(QWidget):
     def setFilePath(self, filePath):
         print(filePath)
         if filePath.endswith(".png") or filePath.endswith(".jpg"):
+            self.deleteWidgets()
+            self.imageWidget = QLabel()
             pixmap = QPixmap(filePath)
-            # pixmap.loadFromData(byteArray)
-            self.imageWidget.setPixmap(pixmap.scaled(720, 480, Qt.AspectRatioMode.KeepAspectRatio))
-            self.imageWidget.setHidden(False)
-            self.dndInfoWidget.setHidden(True)
+            self.imageWidget.setPixmap(pixmap.scaled(700, 480, Qt.AspectRatioMode.KeepAspectRatio))
+            self.mainLayout.addWidget(self.imageWidget)
+    
+        elif filePath.endswith(".txt"):
+            self.deleteWidgets()
+            self.textWidget = QPlainTextEdit()
+            self.textWidget.setPlainText(open(filePath, "r").read())
+            self.textWidget.setReadOnly(True)
+            self.mainLayout.addWidget(self.textWidget)
+            
+        elif filePath.endswith(".mp3") or filePath.endswith(".wav"):
+            self.deleteWidgets()
+            self.audioWidget = AudioWidget(filePath)
+            self.mainLayout.addWidget(self.audioWidget)
+
+            
+        elif filePath.endswith(".mp4"):
+            self.deleteWidgets()
+            self.videoWidget = VideoWidget(filePath)
+            self.mainLayout.addWidget(self.videoWidget)
+            
         self.filePath = filePath
+    
+    def deleteWidgets(self):
+        # self.mainLayout.removeWidget(widget) only removes the view of it, but the instance still exists
+        # del widget deletes the instance
+        # Took me too long to figure this out, I hate this        
+        self.mainLayout.removeWidget(self.dndInfoWidget)
+        self.mainLayout.removeWidget(self.imageWidget)
+        self.mainLayout.removeWidget(self.textWidget)
+        self.mainLayout.removeWidget(self.audioWidget)
+        self.mainLayout.removeWidget(self.videoWidget)
+        
+        del self.dndInfoWidget
+        del self.imageWidget
+        del self.textWidget
+        del self.audioWidget
+        del self.videoWidget
+        
+        self.dndInfoWidget = None
+        self.imageWidget = None
+        self.textWidget = None
+        self.audioWidget = None
+        self.videoWidget = None
     
     # GET FILE PATH (Called from MainWindow.decodeClicked and MainWindow.encodeClicked)
     def getFilePath(self):
         return self.filePath
+        
+# VIDEO PLAYER WIDGET FOR DRAG AND DROP
+class VideoWidget(QWidget):
+    def __init__(self, *args):
+        super().__init__()
+        
+        # VIDEO PLAYER WIDGET
+        self.videoWidget = QVideoWidget()
+        
+        # AUDIO OUTPUT
+        self.audioOutput = QAudioOutput()
+        
+        # MEDIA PLAYER
+        self.mediaPlayer = QMediaPlayer()
+        self.mediaPlayer.setVideoOutput(self.videoWidget)
+        self.mediaPlayer.setAudioOutput(self.audioOutput)
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(*args))
+        self.mediaPlayer.setLoops(-1)
+        self.mediaPlayer.play()
+        
+        # TRANSPARENT WIDGET (To enable drag and drop on video widget as video widget got problem)
+        transprentWidget = QWidget()
+        transprentWidget.setStyleSheet('background-color: transparent;')
+        transprentWidget.setAutoFillBackground(True)
+        
+        # LAYOUT SETUP
+        layout = QStackedLayout()
+        layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
+        layout.addWidget(self.videoWidget)
+        layout.addWidget(transprentWidget)
+
+        self.setLayout(layout)
+        
+# AUDIO PLAYER WIDGET FOR DRAG AND DROP
+class AudioWidget(QWidget):
+    def __init__(self, *args):
+        super().__init__()
+        
+        # AUDIO OUTPUT
+        self.audioOutput = QAudioOutput()
+        
+        # MEDIA PLAYER
+        self.mediaPlayer = QMediaPlayer()
+        self.mediaPlayer.setAudioOutput(self.audioOutput)
+        self.mediaPlayer.setLoops(-1)
+        self.mediaPlayer.positionChanged.connect(self.positionChanged)
+        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+        
+        # PLAY/PAUSE BUTTON
+        self.playPauseButton = QPushButton()
+        self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+        self.playPauseButton.clicked.connect(self.playPauseClicked)
+        
+        # PROGRESS SLIDER
+        self.progressSlider = QSlider(Qt.Orientation.Horizontal)
+        self.progressSlider.setRange(0, 100)
+        self.progressSlider.sliderMoved.connect(self.progressSliderMoved)
+        
+        # LAYOUT SETUP
+        layout = QHBoxLayout()
+        layout.addWidget(self.playPauseButton)
+        layout.addWidget(self.progressSlider)
+        self.setLayout(layout)
+        
+        # PLAY AUDIO
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(*args))
+        self.playPauseClicked()
+        self.mediaPlayer.play()
+
+    # PLAY/PAUSE BUTTON ACTION
+    def playPauseClicked(self):
+        if self.mediaPlayer.isPlaying() == True:
+            self.mediaPlayer.pause()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        else:
+            self.mediaPlayer.play()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
     
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def positionChanged(self, position):
+        self.progressSlider.setValue(position)
+
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def durationChanged(self, duration):
+        self.progressSlider.setRange(0, duration)
+    
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def progressSliderMoved(self, position):
+        self.mediaPlayer.setPosition(position)
+        
 # ENCODE PARAMETERS WIDGET
 # Contains textfield to enter endcode text and bits selection
 class EncodeWidget(QWidget):
@@ -88,6 +231,7 @@ class EncodeWidget(QWidget):
         
         # ENCODE TEXTFIELD
         self.plainTextEdit = QPlainTextEdit()
+        self.plainTextEdit.setFixedHeight(60)
         layout.addWidget(self.plainTextEdit)
         
         # ENCODE DROPDOWN BOX
@@ -120,7 +264,8 @@ class DecodeWidget(QWidget):
         
         # ADD DECODE TEXTFIELD TO LAYOUT
         self.plainTextEdit = QPlainTextEdit()
-        self.plainTextEdit.setEnabled(False)
+        self.plainTextEdit.setReadOnly(True)
+        self.plainTextEdit.setFixedHeight(60)
         layout.addWidget(self.plainTextEdit)
         
         # ADD DECODE DROPDOWN BOX TO LAYOUT
@@ -144,10 +289,11 @@ class DecodeWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.threadPool = QThreadPool()
+        self.threadPool.setMaxThreadCount(1)
         
         # BASIC WINDOW SETTINGS
         self.setWindowTitle("Steganography Encoder/Decoder")
-        self.resize(720, 720)
         self.setFixedWidth(720)
         
         #  LAYOUT
@@ -190,41 +336,65 @@ class MainWindow(QMainWindow):
         text = self.encodeWidget.getText()
         bits = self.encodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if text == "" or bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
-
+            
+        # Encode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT ENCODE ALGO
-            print(text)
-            print(bits)
-            print(filePath)
             # SET DISPLAYED FILE
-            # steg.encode(text, bits, filePath)
-            self.dndWidget.setFilePath(filePath)
+            encodeWorker = EncodeWorker(text, bits, filePath)
+            encodeWorker.signals.result.connect(self.encodeResult)
+            encodeWorker.signals.finished.connect(self.encodeFinished)
+            self.threadPool.start(encodeWorker)
+    
+    def encodeResult(self, result):
+        self.dndWidget.setFilePath(result)
+        
+    def encodeFinished(self):
+        self.threadPool.clear()
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Finished")
+        dlg.setText("Encoded")
+        dlg.exec()
 
     # DECODE BUTTON ACTION
     def decodeClicked(self):
         bits = self.decodeWidget.getBits()
         filePath = self.dndWidget.getFilePath()
+        
+        # Check if all fields are filled
         if bits == 0 or filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
             dlg.setText("Please ensure that all fields are filled")
             dlg.exec()
+        
+        # Decode text
         else:
-            # TODO: ENTRYPOINT TO DIFFERENT DECODE ALGO
-            print(bits)
-            print(filePath)
             # SET DECODE TEXT BOX
-            #self.decodeWidget.setText(steg.decode(filePath, bits))
-            self.decodeWidget.setText(filePath)
-            
+            decodeWorker = DecodeWorker(bits, filePath)
+            decodeWorker.signals.result.connect(self.decodeResult)
+            decodeWorker.signals.finished.connect(self.decodeFinished)
+            self.threadPool.start(decodeWorker)
+    
+    def decodeResult(self, result):
+        self.decodeWidget.setText(result)
+        
+    def decodeFinished(self):
+        self.threadPool.clear()
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Finished")
+        dlg.setText("Decoded")
+        dlg.exec()
+    
     # SAVE BUTTON ACTION
     def saveClicked(self):
-        filePath = self.dndWidget.getFilePath() # TODO: Use fileByteArray or filePath?
+        filePath = self.dndWidget.getFilePath()
         if filePath == "":
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Error")
@@ -232,15 +402,70 @@ class MainWindow(QMainWindow):
             dlg.exec()
         else:
             # TODO: Fix file saving
+            file = open(filePath, 'rb')
+            data = bytearray(file.read())
+            file.close()
+    
             dlg = QFileDialog()
             dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            dlg.saveFileContent(filePath)
-            if dlg.exec():
-                filenames = dlg.selectedFiles()
-                print(filenames)
+            dlg.saveFileContent(data)
+            
+# SIGNALS FOR THREADS 
+class WorkerSignals(QObject):
+    finished = pyqtSignal()
+    error = pyqtSignal(tuple)
+    result = pyqtSignal(object)
+    progress = pyqtSignal(int)
+
+# ENCODE THREADS
+class EncodeWorker(QRunnable):
+    def __init__(self, *args, **kwargs):
+        super(EncodeWorker, self).__init__()
+        self.fn = steg.encode
+        self.args = args
+        self.kwargs = kwargs        
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
+
+# DECODE THREADS
+class DecodeWorker(QRunnable):
+    def __init__(self, *args):
+        super(DecodeWorker, self).__init__()
+        self.fn = steg.decode
+        self.args = args
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ui = MainWindow()
     ui.show()
+    signal.signal(signal.SIGINT, signal.SIG_DFL) # ctl + c to quit
     sys.exit(app.exec())

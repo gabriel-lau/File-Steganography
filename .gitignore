@@ -234,3 +234,7 @@ pyrightconfig.json
 
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,python
+
+encoded_audio.mp3
+encoded_audio.wav
+encoded_video.mp4

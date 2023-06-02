@@ -1,47 +1,43 @@
 import wave
-from pydub import AudioSegment
+from av_steg_utils import int_to_bin, bin_to_int, format_bin_msg
 
 def encode_audio(audio_path, payload, num_lsb):
+    """encodes a audio file using lsb replacement
+
+    Args:
+        audio_path (string): path to audio file cover object
+        payload (string): message to hide
+        num_lsb (int): number of lsb to replace
+
+    Raises:
+        ValueError: if file format is not supported
+    """
     if audio_path.endswith('.mp3'):
-        encode_mp3(audio_path, payload, num_lsb)
+        return encode_mp3(audio_path, payload, num_lsb)
     elif audio_path.endswith('.wav'):
-        encode_wav(audio_path, payload, num_lsb)
+        return encode_wav(audio_path, payload, num_lsb)
     else:
         raise ValueError("Unsupported audio file format.")
     
 def decode_audio(audio_path, num_lsb):
+    """decodes a audio file encoded using lsb replacement
+
+    Args:
+        audio_path (string): path to audio file stego object
+        num_lsb (int): number of replaced lsb
+
+    Returns:
+        string: payload
+
+    Raises:
+        ValueError: if file format is not supported
+    """
     if audio_path.endswith('.mp3'):
         return decode_mp3(audio_path, num_lsb)
     elif audio_path.endswith('.wav'):
         return decode_wav(audio_path, num_lsb)
     else:
         raise ValueError("Unsupported audio file format.")
-
-# Function to convert an integer to binary string
-def int_to_bin(n):
-    return bin(n)[2:].zfill(8)
-
-# Function to convert a binary string to integer
-def bin_to_int(binary):
-    return int(binary, 2)
-
-def format_bin_msg(bin_msg, num_lsb):
-    split_bin_msg = []
-    for i in range(0, len(bin_msg), num_lsb):
-        split_bin_msg.append(bin_msg[i:i + num_lsb])
-
-    if len(split_bin_msg[-1]) % num_lsb != 0:
-        split_bin_msg[-1] += '0' * (num_lsb - len(split_bin_msg[-1]) % num_lsb)
-
-    return split_bin_msg
-
-def mp3_to_wav(mp3_file, wav_file):
-    audio = AudioSegment.from_mp3(mp3_file)
-    audio.export(wav_file, format="wav")
-
-def wav_to_mp3(wav_file, mp3_file):
-    audio = AudioSegment.from_wav(wav_file)
-    audio.export(mp3_file, format="mp3")
 
 def encode_wav(audio_path, payload, num_lsb):
     payload = payload + 'EOM'
@@ -83,7 +79,7 @@ def encode_wav(audio_path, payload, num_lsb):
     modified_audio.close()
     audio.close()
 
-    return required_samples
+    return "encoded_audio.wav" # required_samples
 
 def decode_wav(audio_path, num_lsb):
     # Open the audio file
@@ -138,6 +134,8 @@ def encode_mp3(audio_path, payload, num_lsb):
     file = open('encoded_audio.mp3', 'wb')
     file.write(data)
     file.close()
+    
+    return 'encoded_audio.mp3'
 
 # Function to extract the secret message from the audio file
 def decode_mp3(audio_path, num_lsb):
@@ -160,16 +158,3 @@ def decode_mp3(audio_path, num_lsb):
             break
 
     return payload[:-3]
-
-
-if __name__ == "__main__":
-    # Example usage
-    audio_path = 'ahh-snoring.mp3'
-    secret_message = """According to all known laws of aviation, there is no way a bee should be able to fly. """
-    num_lsb = 3
-
-    encode_audio(audio_path, secret_message, num_lsb)
-
-    extracted_message = decode_audio("encoded_audio.mp3", num_lsb)
-
-    print("Extracted message:", extracted_message)
