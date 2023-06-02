@@ -160,20 +160,6 @@ class VideoWidget(QWidget):
 
         self.setLayout(layout)
         
-    # SET VIDEO PATH TO PLAY (Called friom DnDWidget.setFilePath)
-    def setVideoPath(self, filePath):
-        self.mediaPlayer.stop()
-        self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
-        self.mediaPlayer.play()    
-    
-    # HIDE AND STOP VIDEO
-    def setHidden(self, hide):
-        if hide:
-            self.mediaPlayer.stop()
-            super().setHidden(True)
-        else:
-            super().setHidden(False)
-    
 # AUDIO PLAYER WIDGET FOR DRAG AND DROP
 class AudioWidget(QWidget):
     def __init__(self, *args):
@@ -210,21 +196,6 @@ class AudioWidget(QWidget):
         self.playPauseClicked()
         self.mediaPlayer.play()
 
-        
-    # SET AUDIO PATH TO PLAY (Called friom DnDWidget.setFilePath)
-    def setAudioPath(self, filePath):
-        self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
-        self.playPauseClicked()
-        self.mediaPlayer.play()
-    
-    # HIDE AND STOP AUDIO
-    def setHidden(self, hide):
-        if hide:
-            self.mediaPlayer.stop()
-            super().setHidden(True)
-        else:
-            super().setHidden(False)
-            
     # PLAY/PAUSE BUTTON ACTION
     def playPauseClicked(self):
         if self.mediaPlayer.isPlaying() == True:
@@ -378,11 +349,18 @@ class MainWindow(QMainWindow):
             # SET DISPLAYED FILE
             encodeWorker = EncodeWorker(text, bits, filePath)
             encodeWorker.signals.result.connect(self.encodeResult)
+            encodeWorker.signals.finished.connect(self.encodeFinished)
             self.threadPool.start(encodeWorker)
-            #self.dndWidget.setFilePath(steg.encode(text, bits, filePath))
     
     def encodeResult(self, result):
         self.dndWidget.setFilePath(result)
+        
+    def encodeFinished(self):
+        self.threadPool.clear()
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Finished")
+        dlg.setText("Encoded")
+        dlg.exec()
 
     # DECODE BUTTON ACTION
     def decodeClicked(self):
@@ -401,11 +379,18 @@ class MainWindow(QMainWindow):
             # SET DECODE TEXT BOX
             decodeWorker = DecodeWorker(bits, filePath)
             decodeWorker.signals.result.connect(self.decodeResult)
+            decodeWorker.signals.finished.connect(self.decodeFinished)
             self.threadPool.start(decodeWorker)
-            #self.decodeWidget.setText(steg.decode(bits, filePath))
     
     def decodeResult(self, result):
         self.decodeWidget.setText(result)
+        
+    def decodeFinished(self):
+        self.threadPool.clear()
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Finished")
+        dlg.setText("Decoded")
+        dlg.exec()
     
     # SAVE BUTTON ACTION
     def saveClicked(self):
@@ -424,17 +409,15 @@ class MainWindow(QMainWindow):
             dlg = QFileDialog()
             dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
             dlg.saveFileContent(data)
-            if dlg.exec():
-                filenames = dlg.selectedFiles()
-                print(filenames)
-
+            
+# SIGNALS FOR THREADS 
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
     result = pyqtSignal(object)
     progress = pyqtSignal(int)
 
-
+# ENCODE THREADS
 class EncodeWorker(QRunnable):
     def __init__(self, *args, **kwargs):
         super(EncodeWorker, self).__init__()
@@ -457,6 +440,7 @@ class EncodeWorker(QRunnable):
         finally:
             self.signals.finished.emit()  # Done
 
+# DECODE THREADS
 class DecodeWorker(QRunnable):
     def __init__(self, *args):
         super(DecodeWorker, self).__init__()
