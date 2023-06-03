@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QMainWindow, QApplication, QWidget, QGridLayout, QV
                              QLabel, QPlainTextEdit, QComboBox, QMessageBox, QFileDialog, QStackedLayout, QSlider, QStyle)
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QMovie
 from PyQt6.QtCore import Qt, QUrl, QThreadPool, QRunnable, pyqtSlot, pyqtSignal, QObject
 import sys, traceback
 import signal
@@ -24,8 +24,14 @@ class DNDWidget(QWidget):
         # IMAGE WIDGET
         self.imageWidget = None
         
+        # GIF WIDGET
+        self.gifWidget = None
+        
         # TEXT WIDGET
         self.textWidget = None
+        
+        # DOCX WIDGET
+        self.docxWidget = None
         
         # VIDEO WIDGET
         self.videoWidget = None
@@ -60,7 +66,7 @@ class DNDWidget(QWidget):
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
-            if f.endswith(".png") or f.endswith(".jpg") or f.endswith(".txt") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
+            if f.endswith(".png") or f.endswith(".gif") or f.endswith(".txt") or f.endswith(".docx") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
                 self.setFilePath(f)
         
     # FILE SELECT BUTTON ACTION
@@ -68,7 +74,7 @@ class DNDWidget(QWidget):
         # DISPLAY FILE SELECT WINDOW
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.FileMode.ExistingFiles)
-        dlg.setNameFilter("Images (*.png  *.jpg);;Text (*.txt);;Audio/Video (*.mp3 *.mp4 *.wav)")
+        dlg.setNameFilter("Images (*.png  *.gif);;Text (*.txt *.docx);;Audio/Video (*.mp3 *.mp4 *.wav)")
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
@@ -81,6 +87,11 @@ class DNDWidget(QWidget):
             pixmap = QPixmap(filePath)
             self.imageWidget.setPixmap(pixmap.scaled(700, 480, Qt.AspectRatioMode.KeepAspectRatio))
             self.mainLayout.addWidget(self.imageWidget)
+            
+        elif filePath.endswith(".gif"):
+            self.deleteWidgets()
+            self.gifWidget = GifWidget(filePath)
+            self.mainLayout.addWidget(self.gifWidget)
     
         elif filePath.endswith(".txt"):
             self.deleteWidgets()
@@ -88,7 +99,12 @@ class DNDWidget(QWidget):
             self.textWidget.setPlainText(open(filePath, "r").read())
             self.textWidget.setReadOnly(True)
             self.mainLayout.addWidget(self.textWidget)
-            
+        
+        elif filePath.endswith(".docx"):
+            self.deleteWidgets()
+            self.docxWidget = NotSupportedWidget()
+            self.mainLayout.addWidget(self.docxWidget)
+        
         elif filePath.endswith(".mp3") or filePath.endswith(".wav"):
             self.deleteWidgets()
             self.audioWidget = AudioWidget(filePath)
@@ -108,19 +124,25 @@ class DNDWidget(QWidget):
         # Took me too long to figure this out, I hate this        
         self.mainLayout.removeWidget(self.dndInfoWidget)
         self.mainLayout.removeWidget(self.imageWidget)
+        self.mainLayout.removeWidget(self.gifWidget)
         self.mainLayout.removeWidget(self.textWidget)
+        self.mainLayout.removeWidget(self.docxWidget)
         self.mainLayout.removeWidget(self.audioWidget)
         self.mainLayout.removeWidget(self.videoWidget)
         
         del self.dndInfoWidget
         del self.imageWidget
+        del self.gifWidget
         del self.textWidget
+        del self.docxWidget
         del self.audioWidget
         del self.videoWidget
         
         self.dndInfoWidget = None
         self.imageWidget = None
+        self.gifWidget = None
         self.textWidget = None
+        self.docxWidget = None
         self.audioWidget = None
         self.videoWidget = None
     
@@ -195,6 +217,32 @@ class AudioWidget(QWidget):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(*args))
         self.playPauseClicked()
         self.mediaPlayer.play()
+
+class NotSupportedWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        self.label = QLabel("File type cannot be displayed")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+    
+class GifWidget(QWidget):
+    def __init__(self, *args):
+        super().__init__()
+        
+        self.movie = QMovie(*args)
+        
+        self.label = QLabel()
+        self.label.setMovie(self.movie)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.movie.start()
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 
     # PLAY/PAUSE BUTTON ACTION
     def playPauseClicked(self):
@@ -358,8 +406,8 @@ class MainWindow(QMainWindow):
     def encodeFinished(self):
         self.threadPool.clear()
         dlg = QMessageBox(self)
-        dlg.setWindowTitle("Finished")
-        dlg.setText("Encoded")
+        dlg.setWindowTitle("Encoded")
+        dlg.setText("Displaying encoded file")
         dlg.exec()
 
     # DECODE BUTTON ACTION
@@ -388,8 +436,8 @@ class MainWindow(QMainWindow):
     def decodeFinished(self):
         self.threadPool.clear()
         dlg = QMessageBox(self)
-        dlg.setWindowTitle("Finished")
-        dlg.setText("Decoded")
+        dlg.setWindowTitle("Decoded")
+        dlg.setText("Displaying decoded text")
         dlg.exec()
     
     # SAVE BUTTON ACTION
