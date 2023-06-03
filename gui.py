@@ -102,7 +102,7 @@ class DNDWidget(QWidget):
         
         elif filePath.endswith(".docx"):
             self.deleteWidgets()
-            self.docxWidget = NotSupportedWidget()
+            self.docxWidget = FileNameWidget(filePath)
             self.mainLayout.addWidget(self.docxWidget)
         
         elif filePath.endswith(".mp3") or filePath.endswith(".wav"):
@@ -217,6 +217,17 @@ class AudioWidget(QWidget):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(*args))
         self.playPauseClicked()
         self.mediaPlayer.play()
+
+class FileNameWidget(QWidget):
+    def __init__(self, *args):
+        super().__init__()
+        
+        self.label = QLabel(*args)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 
 class NotSupportedWidget(QWidget):
     def __init__(self):
