@@ -38,6 +38,7 @@ def encode_to_doc(base_file, payload):
     encoded_file = os.path.join(dir_path, output)
     stego_doc.save(encoded_file)
     print("a very successful file creation has occurred :')")
+    return dir_path + "/" + output
 
 
 def decode_frm_doc(stego_file):
@@ -61,6 +62,7 @@ def decode_frm_doc(stego_file):
         byte = payload_bin[i:i + 8]
         decoded_text += chr(int(byte, 2))
 
+    print("decoded text: " + decoded_text)
     return decoded_text
 
 
