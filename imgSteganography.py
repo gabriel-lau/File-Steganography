@@ -76,7 +76,9 @@ def encode_image(image_path, secretData, number_of_bits):
     file_name, file_extension = os.path.splitext(image_path)
 
     cv2.imwrite(file_name + "_encoded" + file_extension, image,  [cv2.IMWRITE_JPEG_QUALITY, 100])
-    print("Image successfully encoded")
+    print("Image successfully encoded: "+ file_name + "_encoded" + file_extension)
+
+    return file_name + "_encoded" + file_extension
 
 
 def decode_image(image_path, number_of_bits):
@@ -110,16 +112,16 @@ def decode_image(image_path, number_of_bits):
 
 
 # Example usage
-image_encode_path = "C:\\Users\\Joshua Ong\\PycharmProjects\\CSC2005-Coursework-1\\imageTest.png"
-image_decode_path = "C:\\Users\\Joshua Ong\\PycharmProjects\\CSC2005-Coursework-1\\imageTest_encoded.png"
-data_to_encode = "test secret"
-number_of_bits = 1
+# image_encode_path = "C:\\Users\\Joshua Ong\\PycharmProjects\\CSC2005-Coursework-1\\imageTest.png"
+# image_decode_path = "C:\\Users\\Joshua Ong\\PycharmProjects\\CSC2005-Coursework-1\\imageTest_encoded.png"
+# data_to_encode = "test secret"
+# number_of_bits = 1
 # Encode the data into the image
-encode_image(image_encode_path, data_to_encode, number_of_bits)
+# encode_image(image_encode_path, data_to_encode, number_of_bits)
 
 # Decode the data from the encoded image
-decoded_data = decode_image(image_decode_path, number_of_bits)
-print("Decoded data:", decoded_data)
+# decoded_data = decode_image(image_decode_path, number_of_bits)
+# print("Decoded data:", decoded_data)
 
 
 # imageObject = Image.open("./testgif.gif")
