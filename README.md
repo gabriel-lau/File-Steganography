@@ -12,4 +12,5 @@ For installation of image cryptography components, run: <br />
 `pip install opencv-python`
 
 For installation of text cryptography components, run: <br />
-`pip install python-docx`
+`pip install python-docx` <br />
+`pip install openpyxl`

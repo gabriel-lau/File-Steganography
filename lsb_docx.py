@@ -42,6 +42,7 @@ def encode_to_doc(base_file, payload, num_lsb):
     encoded_file = os.path.join(dir_path, output)
     stego_doc.save(encoded_file)
     print("A very successful file creation has occurred :')")
+    return encoded_file
 
 
 def decode_frm_doc(stego_file, num_lsb):

@@ -36,6 +36,7 @@ def encode_to_txt(base_file, payload, num_lsb):
     with open(encoded_file, 'w', encoding='utf-8') as file:
         file.write(stego_text)
     print('written to:', encoded_file)
+    return encoded_file
 
 
 def decode_from_txt(stego_file, num_lsb):
