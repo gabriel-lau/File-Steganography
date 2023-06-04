@@ -35,6 +35,7 @@ def hide_data_in_excel(base_file, payload, num_lsb):
     base_name = os.path.splitext(os.path.basename(base_file))[0]
     output = base_name + f"_encoded" + ext
     encoded_file = os.path.join(dir_path, output)
+    encoded_file = 'encoded_excel.xlsx'
     wb.save(encoded_file)
     print('written to:', encoded_file)
     return encoded_file

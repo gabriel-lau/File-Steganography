@@ -52,6 +52,7 @@ class DNDWidget(QWidget):
         
         # MAIN LAYOUT SETUP
         self.mainLayout = QHBoxLayout()
+        self.mainLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.mainLayout.addWidget(self.dndInfoWidget)
         self.setLayout(self.mainLayout)
 

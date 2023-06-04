@@ -238,6 +238,10 @@ pyrightconfig.json
 encoded_audio.mp3
 encoded_audio.wav
 encoded_video.mp4
+encoded_image.png
+encoded_text.txt
+encoded_doc.docx
+encoded_excel
 
 decode.txt
-emcode.txt
+encode.txt

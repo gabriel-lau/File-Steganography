@@ -40,6 +40,7 @@ def encode_to_doc(base_file, payload, num_lsb):
     print('out_file_name:', output)
     print('directory_path', dir_path)
     encoded_file = os.path.join(dir_path, output)
+    encoded_file = 'encoded_doc.docx'
     stego_doc.save(encoded_file)
     print("A very successful file creation has occurred :')")
     return encoded_file
