@@ -67,7 +67,7 @@ class DNDWidget(QWidget):
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
-            if f.endswith(".png") or f.endswith(".gif") or f.endswith(".txt") or f.endswith(".docx") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
+            if f.endswith(".png") or f.endswith(".bmp") or f.endswith(".gif") or f.endswith(".txt") or f.endswith(".docx") or f.endswith(".mp3") or f.endswith(".mp4") or f.endswith(".wav"):
                 self.setFilePath(f)
         
     # FILE SELECT BUTTON ACTION
@@ -75,14 +75,14 @@ class DNDWidget(QWidget):
         # DISPLAY FILE SELECT WINDOW
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.FileMode.ExistingFiles)
-        dlg.setNameFilter("Images (*.png *.gif);;Text (*.txt *.docx);;Audio/Video (*.mp3 *.mp4 *.wav)")
+        dlg.setNameFilter("Images (*.png *.bmp *.gif);;Text (*.txt *.docx);;Audio/Video (*.mp3 *.mp4 *.wav)")
         if dlg.exec():
             self.setFilePath(dlg.selectedFiles()[0])
     
     # UPDATE DND FIELD WITH FILE
     def setFilePath(self, filePath):
         print(filePath)
-        if filePath.endswith(".png"):
+        if filePath.endswith(".png") or filePath.endswith(".bmp"):
             self.deleteWidgets()
             self.imageWidget = QLabel()
             pixmap = QPixmap(filePath)
