@@ -217,6 +217,28 @@ class AudioWidget(QWidget):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(*args))
         self.playPauseClicked()
         self.mediaPlayer.play()
+        
+        # PLAY/PAUSE BUTTON ACTION
+    def playPauseClicked(self):
+        if self.mediaPlayer.isPlaying() == True:
+            self.mediaPlayer.pause()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        else:
+            self.mediaPlayer.play()
+            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+    
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def positionChanged(self, position):
+        self.progressSlider.setValue(position)
+
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def durationChanged(self, duration):
+        self.progressSlider.setRange(0, duration)
+    
+    # PROGRESS SLIDER MOVEMENT ACTION
+    def progressSliderMoved(self, position):
+        self.mediaPlayer.setPosition(position)
+
 
 class FileNameWidget(QWidget):
     def __init__(self, *args):
@@ -254,28 +276,7 @@ class GifWidget(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         self.setLayout(layout)
-
-    # PLAY/PAUSE BUTTON ACTION
-    def playPauseClicked(self):
-        if self.mediaPlayer.isPlaying() == True:
-            self.mediaPlayer.pause()
-            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
-        else:
-            self.mediaPlayer.play()
-            self.playPauseButton.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
     
-    # PROGRESS SLIDER MOVEMENT ACTION
-    def positionChanged(self, position):
-        self.progressSlider.setValue(position)
-
-    # PROGRESS SLIDER MOVEMENT ACTION
-    def durationChanged(self, duration):
-        self.progressSlider.setRange(0, duration)
-    
-    # PROGRESS SLIDER MOVEMENT ACTION
-    def progressSliderMoved(self, position):
-        self.mediaPlayer.setPosition(position)
-        
 # ENCODE PARAMETERS WIDGET
 # Contains textfield to enter endcode text and bits selection
 class EncodeWidget(QWidget):
