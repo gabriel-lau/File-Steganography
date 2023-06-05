@@ -30,11 +30,11 @@ def hide_data_in_excel(base_file, payload, num_lsb):
                     index += num_lsb
                 cell.value = ''.join(chr(int(modified_value[i:i+8], 2)) for i in range(0, len(modified_value), 8))
 
-    root, ext = os.path.splitext(base_file)
-    dir_path = os.path.dirname(root)
-    base_name = os.path.splitext(os.path.basename(base_file))[0]
-    output = base_name + f"_encoded" + ext
-    encoded_file = os.path.join(dir_path, output)
+    #root, ext = os.path.splitext(base_file)
+    #dir_path = os.path.dirname(root)
+    #base_name = os.path.splitext(os.path.basename(base_file))[0]
+    #output = base_name + f"_encoded" + ext
+    #encoded_file = os.path.join(dir_path, output)
     encoded_file = 'encoded_excel.xlsx'
     wb.save(encoded_file)
     print('written to:', encoded_file)
@@ -66,6 +66,7 @@ def extract_data_from_excel(file_path, num_lsb):
             extracted_message += chr(int(byte, 2))
 
     print("decoded thingy:", extracted_message)
+    return extracted_message
 
 
 

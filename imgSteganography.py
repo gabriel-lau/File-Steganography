@@ -75,10 +75,15 @@ def encode_image(image_path, secretData, number_of_bits):
 
     file_name, file_extension = os.path.splitext(image_path)
 
-    cv2.imwrite(file_name + "_encoded" + file_extension, image,  [cv2.IMWRITE_JPEG_QUALITY, 100])
+    #cv2.imwrite(file_name + "_encoded" + file_extension, image,  [cv2.IMWRITE_JPEG_QUALITY, 100])
+    encoded_image_name = "encoded_image.png"
+    if image_path.endswith(".bmp"):
+        encoded_image_name = "encoded_image.bmp"
+    cv2.imwrite(encoded_image_name, image,  [cv2.IMWRITE_JPEG_QUALITY, 100])
     print("Image successfully encoded: "+ file_name + "_encoded" + file_extension)
 
-    return file_name + "_encoded" + file_extension
+    #return file_name + "_encoded" + file_extension
+    return encoded_image_name
 
 
 def decode_image(image_path, number_of_bits):

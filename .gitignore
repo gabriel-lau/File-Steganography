@@ -239,9 +239,11 @@ encoded_audio.mp3
 encoded_audio.wav
 encoded_video.mp4
 encoded_image.png
+encoded_image.bmp
+encoded_gif.gif
 encoded_text.txt
 encoded_doc.docx
-encoded_excel
+encoded_excel.xlsx
 
 decode.txt
 encode.txt

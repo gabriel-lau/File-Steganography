@@ -88,12 +88,12 @@ class DNDWidget(QWidget):
             pixmap = QPixmap(filePath)
             self.imageWidget.setPixmap(pixmap.scaled(700, 480, Qt.AspectRatioMode.KeepAspectRatio))
             self.mainLayout.addWidget(self.imageWidget)
-            
+        
         elif filePath.endswith(".gif"):
             self.deleteWidgets()
             self.gifWidget = GifWidget(filePath)
             self.mainLayout.addWidget(self.gifWidget)
-    
+        
         elif filePath.endswith(".txt"):
             self.deleteWidgets()
             self.textWidget = QPlainTextEdit()
@@ -122,14 +122,21 @@ class DNDWidget(QWidget):
     def deleteWidgets(self):
         # self.mainLayout.removeWidget(widget) only removes the view of it, but the instance still exists
         # del widget deletes the instance
-        # Took me too long to figure this out, I hate this        
-        self.mainLayout.removeWidget(self.dndInfoWidget)
-        self.mainLayout.removeWidget(self.imageWidget)
-        self.mainLayout.removeWidget(self.gifWidget)
-        self.mainLayout.removeWidget(self.textWidget)
-        self.mainLayout.removeWidget(self.docxWidget)
-        self.mainLayout.removeWidget(self.audioWidget)
-        self.mainLayout.removeWidget(self.videoWidget)
+        # Took me too long to figure this out, I hate this  
+        if self.dndInfoWidget is not None:
+            self.mainLayout.removeWidget(self.dndInfoWidget)
+        if self.imageWidget is not None:
+            self.mainLayout.removeWidget(self.imageWidget)
+        if self.gifWidget is not None:
+            self.mainLayout.removeWidget(self.gifWidget)
+        if self.textWidget is not None:
+            self.mainLayout.removeWidget(self.textWidget)
+        if self.docxWidget is not None:
+            self.mainLayout.removeWidget(self.docxWidget)
+        if self.audioWidget is not None:
+            self.mainLayout.removeWidget(self.audioWidget)
+        if self.videoWidget is not None:
+            self.mainLayout.removeWidget(self.videoWidget)
         
         del self.dndInfoWidget
         del self.imageWidget
@@ -297,7 +304,7 @@ class EncodeWidget(QWidget):
         
         # ENCODE DROPDOWN BOX
         self.comboBox = QComboBox()
-        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits"])
+        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits", "6 bits"])
         layout.addWidget(self.comboBox)
         
         # ASSIGNING LAYOUT TO  WIDGET
@@ -331,7 +338,7 @@ class DecodeWidget(QWidget):
         
         # ADD DECODE DROPDOWN BOX TO LAYOUT
         self.comboBox = QComboBox()
-        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits"])
+        self.comboBox.addItems(["Select the number of bits", "1 bits", "2 bits", "3 bits", "4 bits", "5 bits", "6 bits"])
         layout.addWidget(self.comboBox)
         
         # ASSIGNING LAYOUT TO  WIDGET

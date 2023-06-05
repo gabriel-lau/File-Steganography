@@ -28,11 +28,11 @@ def encode_to_txt(base_file, payload, num_lsb):
 
     stego_text = base_text + stego_text
 
-    root, ext = os.path.splitext(base_file)
-    dir_path = os.path.dirname(root)
-    base_name = os.path.splitext(os.path.basename(base_file))[0]
-    output = base_name + f"_encoded" + ext
-    encoded_file = os.path.join(dir_path, output)
+    #root, ext = os.path.splitext(base_file)
+    #dir_path = os.path.dirname(root)
+    #base_name = os.path.splitext(os.path.basename(base_file))[0]
+    #output = base_name + f"_encoded" + ext
+    #encoded_file = os.path.join(dir_path, output)
     encoded_file = 'encoded_text.txt'
     with open(encoded_file, 'w', encoding='utf-8') as file:
         file.write(stego_text)

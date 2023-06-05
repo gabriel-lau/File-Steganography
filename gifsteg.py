@@ -90,7 +90,8 @@ def encode_image(image_path, secret_data, number_of_bits):
     encode_text.close()
 
     file_name, file_extension = os.path.splitext(image_path)
-    output_path = file_name + "_encoded" + file_extension
+    #output_path = file_name + "_encoded" + file_extension
+    output_path = "encoded_gif.gif"
     frames[0].save(output_path, save_all=True, append_images=frames[1:], loop=0, duration=gif.info['duration'])
     print(len(frames))
 
@@ -139,6 +140,7 @@ def decode_image(image_path, number_of_bits):
     print("Image successfully decoded")
 
     return decoded_data[:-5]
+"""
 # Example usage
 image_path = 'bears.gif'
 output_path = 'bears_encoded.gif'
@@ -151,3 +153,4 @@ encode_image(image_path, message, number_of_bits)
 # Reveal the message from the encoded GIF image
 revealed_message = decode_image(output_path, number_of_bits)
 print("Revealed message:", revealed_message)
+"""

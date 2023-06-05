@@ -33,13 +33,13 @@ def encode_to_doc(base_file, payload, num_lsb):
     stego_doc = Document()
     stego_doc.add_paragraph(stego_text)
 
-    root, ext = os.path.splitext(base_file)
-    dir_path = os.path.dirname(root)
-    base_name = os.path.splitext(os.path.basename(base_file))[0]
-    output = base_name + f"_encoded" + ext
-    print('out_file_name:', output)
-    print('directory_path', dir_path)
-    encoded_file = os.path.join(dir_path, output)
+    #root, ext = os.path.splitext(base_file)
+    #dir_path = os.path.dirname(root)
+    #base_name = os.path.splitext(os.path.basename(base_file))[0]
+    #output = base_name + f"_encoded" + ext
+    #print('out_file_name:', output)
+    #print('directory_path', dir_path)
+    #encoded_file = os.path.join(dir_path, output)
     encoded_file = 'encoded_doc.docx'
     stego_doc.save(encoded_file)
     print("A very successful file creation has occurred :')")
